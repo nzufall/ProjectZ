@@ -9,10 +9,14 @@
 Player::Player() {
 	x = 40;
 	y = 40;
+	health = 100;
+	hitTime = 0;
 	vSpeed = 0;
 	hSpeed = 0;
+	shootCount = 0;
 	textureID = 0;
 	jumping = true;
+	int direction = 1;
 }
 int Player::collidingX(vector<Tile> Tiles, vector<Level> levels) {
 	// 0 - not colliding
@@ -110,7 +114,8 @@ int Player::collidingY(vector<Tile> Tiles, vector<Level> levels) {
 }
 void Player::update(vector<Tile> &Tiles, vector<Level> &levels) {
 	//gravity
-
+	shootCount++;
+	hitTime++;
 		vSpeed += 10;
 		if (vSpeed > 50) {
 			vSpeed = 50;
@@ -121,6 +126,7 @@ void Player::update(vector<Tile> &Tiles, vector<Level> &levels) {
 	{
 		if (event.type == SDL_QUIT) {
 			SDL_Quit();
+			exit(1);
 			return;
 		}
 		if (event.type == SDL_KEYDOWN) {
@@ -131,14 +137,25 @@ void Player::update(vector<Tile> &Tiles, vector<Level> &levels) {
 		}
 	}
 	if (input.keyState(SDL_SCANCODE_D)) {
+		direction = 1;
 		hSpeed += 8;
+
 	}
 	if (input.keyState(SDL_SCANCODE_A)) {
+		direction = -1;
 		hSpeed -= 8;
 	}
 	if (input.keyState(SDL_SCANCODE_W) && !jumping) {
 		jumping = true;
 		vSpeed = -50;
+	}
+	if (input.keyState(SDL_SCANCODE_E) && shootCount > 15) {
+		shootCount = 0;
+		shooting = true;
+	}
+	if (input.keyState(SDL_SCANCODE_ESCAPE)) {
+		SDL_Quit();
+		exit(1);
 	}
 	
 

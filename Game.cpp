@@ -42,11 +42,40 @@ void Game::Startup() {
 
 void Game::loadAllAssets() {
 	//Brings all images and their dimensions into system memory, inefficent but acceptable due to scope of game.
-	Texture t = Texture("hello.bmp", renderer);
+	Texture t = Texture("tree.bmp", renderer);
 	vTextures.push_back(t); // 0
 	Texture grass = Texture("grass.bmp", renderer);
 	vTextures.push_back(grass); // 1
 
+	//Load Enemies
+	Enemy e1 = Enemy();
+	e1.x = 800;
+	e1.y = 400;
+	SDL_Texture* e1Texture = loadTexture("lava.bmp", renderer);
+	e1.tex = e1Texture;
+	vEnemies.push_back(e1);
+	Enemy e2 = Enemy();
+
+	e2.x = 1400;
+	e2.y = 400;
+	e2.tex = e1.tex;
+	vEnemies.push_back(e2);
+
+
+	vEnemies.push_back(e2);
+	e2.x += 200;
+	vEnemies.push_back(e2);
+	e2.x += 200;
+	vEnemies.push_back(e2);
+	e2.x += 200;
+	vEnemies.push_back(e2);
+	e2.x += 200;
+	vEnemies.push_back(e2);
+	e2.x += 200;
+	vEnemies.push_back(e2);
+
+	//Load Projectiles
+	pProj = loadTexture("bProj.bmp", renderer);
 
 	//Link to Tiles
 	Tile placeholder1 = Tile(false, -3, "placeholder", 32, 32);
@@ -58,35 +87,11 @@ void Game::loadAllAssets() {
 	Level level1 = Level(150, 24);
 	vLevels.push_back(level1); // 0
 
-	vLevels.at(0).setNode(0, 20, 1);
-	vLevels.at(0).setNode(1, 20, 1);
-	vLevels.at(0).setNode(2, 20, 1);
-	vLevels.at(0).setNode(3, 20, 1);
-	vLevels.at(0).setNode(4, 20, 1);
-	vLevels.at(0).setNode(5, 20, 1);
-	vLevels.at(0).setNode(6, 20, 1);
-	vLevels.at(0).setNode(7, 20, 1);
-	vLevels.at(0).setNode(8, 20, 1);
-	vLevels.at(0).setNode(9, 20, 1);
-	vLevels.at(0).setNode(0, 21, 1);
-	vLevels.at(0).setNode(1, 21, 1);
-	vLevels.at(0).setNode(2, 21, 1);
-	vLevels.at(0).setNode(3, 21, 1);
-	vLevels.at(0).setNode(4, 21, 1);
-	vLevels.at(0).setNode(5, 21, 1);
-	vLevels.at(0).setNode(6, 21, 1);
-	vLevels.at(0).setNode(7, 21, 1);
-	vLevels.at(0).setNode(8, 21, 1);
-	vLevels.at(0).setNode(9, 21, 1);
-	vLevels.at(0).setNode(9, 19, 1);
-	vLevels.at(0).setNode(9, 18, 1);
-	vLevels.at(0).setNode(9, 17, 1);
-	vLevels.at(0).setNode(8, 17, 1);
-	vLevels.at(0).setNode(7, 17, 1);
-	vLevels.at(0).setNode(9, 16, 1);
-	vLevels.at(0).setNode(9, 15, 1);
-	for (int i = 10; i < 30; i++) {
-		vLevels.at(0).setNode(i, 15, 1);
+
+
+	for (int i = 0; i < level1.width; i++) {
+		vLevels.at(0).setNode(i, (SCREEN_HEIGHT / 32) - 1, 1);
+		vLevels.at(0).setNode(i, (SCREEN_HEIGHT / 32) - 2, 1);
 	}
 	for (int i = 30; i < 75; i++) {
 		vLevels.at(0).setNode(i, 18, 1);
@@ -123,7 +128,31 @@ void Game::renderTexture(SDL_Texture *tex, SDL_Renderer *ren, int x, int y) {
 	SDL_QueryTexture(tex, NULL, NULL, &dst.w, &dst.h);
 	SDL_RenderCopy(renderer, tex, NULL, &dst);
 }
+bool Game::CheckDistance(Player p, Enemy e) {
+	double distance = ((p.x - e.x) * (p.x - e.x)) + ((p.y - e.y) * (p.y - e.y));
+	if (distance == 0) distance = 1;
+	distance = sqrt(distance);
 
+	if (distance < 600) return true;
+	else return false;
+}
+bool Game::collides(Enemy e, Projectile p) {
+
+	if ((p.y >= e.y) && (p.y <= e.y + 64)) {
+		if (p.x + 15 > e.x) {
+			return true;
+		}
+	}
+	return false;
+}
+bool Game::collides(Player p, Enemy e) {
+	if ((p.y >= e.y) && (p.y <= e.y + 64)) {
+		if (p.x + 32 > e.x) {
+			return true;
+		}
+	}
+	return false;
+}
 void Game::run() {
 	//Houses the primary game loop and runs the update and render methods within the loop
 	
@@ -134,12 +163,81 @@ void Game::run() {
 		SDL_Delay(1000.0 / 60.0);
 	}
 }
-
+void Game::GameQuit() {
+	SDL_Delay(3000);
+	SDL_Quit();
+	
+	exit(1);
+}
 void Game::update() {
 	//Updates all game objects that require updating
 	player.update(vTiles, vLevels);
+	int i = 0;
+	while (i < vEnemies.size()) {
+		if (CheckDistance(player, vEnemies.at(i))) {
+			vEnemies.at(i).update(player.x, player.y);
+			
+
+			if(collides(player, vEnemies.at(i))) {
+				std::cout << "Current Player Health: " << player.health << std::endl;
+				if (player.hitTime > 30) {
+					player.health -= 10;
+					player.hitTime = 0;
+					if (player.health <= 0) {
+						GameQuit();
+					}
+				}
+				
+			}
+		}
+		i++;
+	}
+	if (player.shooting) {
+
+		player.shooting = false;
+		Projectile p = Projectile(player.x, player.y, player.direction);
+		vProj.push_back(p);
+		
+		
+	}
+	bool hitEnemy = false;
+	int projUpdate = 0;
+	while (projUpdate < vProj.size()) {
+		vProj.at(projUpdate).update();
+		int numE = 0;
+		while (numE < vEnemies.size() && !hitEnemy) {
+			if (collides(vEnemies.at(numE), vProj.at(projUpdate))) {
+				
+				vProj.erase(vProj.begin() + projUpdate);
+				vEnemies.at(numE).health -= 40;
+				hitEnemy = true;
+				if (vEnemies.at(numE).health < 0) {
+					
+					
+					vEnemies.erase(vEnemies.begin() + numE);
+					numE = vEnemies.size() + 1;
+					
+					
+				}
+				
+			}
+			
+			numE++;
+		}
+		projUpdate++;
+	}
+	projUpdate = 0;
+	while (projUpdate < vProj.size()) {
+		
+		if (vProj.at(projUpdate).killProjectile()) {
+			vProj.erase(vProj.begin() + projUpdate);
+		}
+		projUpdate++;
+	}
 	cam->moveCamera(player.x - (SCREEN_HEIGHT / 2), 0);
-	std::cout << "X: " << cam->x + SCREEN_WIDTH<< ", Y: " << cam->y << std::endl;
+	if (vEnemies.size() < 1) {
+		GameQuit();
+	}
 }
 
 void Game::render() {
@@ -154,7 +252,19 @@ void Game::render() {
 			}
 		}
 	}
+	int projRender = 0;
+	while (projRender < vEnemies.size()) {
+		renderTexture(vEnemies.at(projRender).tex, renderer, vEnemies.at(projRender).x - cam->x, vEnemies.at(projRender).y);
+		projRender++;
+	}
+	projRender = 0;
 	renderTexture(vTextures.at(player.textureID).tex, renderer, player.x - cam->x, player.y);
 
+	while (projRender < vProj.size()) {
+		
+		renderTexture(pProj, renderer, vProj.at(projRender).x - cam->x, vProj.at(projRender).y);
+		projRender++;
+	}
+	
 	SDL_RenderPresent(renderer);
 }

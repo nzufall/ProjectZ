@@ -8,7 +8,10 @@
 #include "Camera.h"
 #include "Player.h"
 #include "Level.h"
+#include "Enemy.h"
+#include "Projectile.h"
 #include <iostream>
+#include <math.h>
 #include <string>
 #include <vector>
 
@@ -60,10 +63,30 @@ public:
 	* @param y The y coordinate to draw to
 	*/
 	void renderTexture(SDL_Texture *tex, SDL_Renderer *ren, int x, int y);
+	/**
+	* Determines if an Enemy and projectile have collided
+	* @param e the enemy in question of collision
+	* @param p the projectile in question
+	*/
+	bool collides(Enemy e, Projectile p);
+	/**
+	* Determines if a player has collided with an enemy
+	* @param p the player in question of collision
+	* @param e the enemy in question of collision
+	*/
+	bool collides(Player p, Enemy e);
+	/**
+	* Determines if an enemy is near a player. Used to determine if the enemy activates
+	* @param p the player's location
+	* @param e the enemy's location
+	*/
+	bool CheckDistance(Player p, Enemy e);
 	//Variables
 	vector<Texture> vTextures;
 	vector<Tile> vTiles;
 	vector<Level> vLevels;
+	vector<Enemy> vEnemies;
+	vector<Projectile> vProj;
 	Camera* cam;
 	Player player;
 	int vTexSize;
@@ -74,6 +97,11 @@ public:
 	int SCREEN_HEIGHT;
 	int SCREEN_WIDTH;
 	bool running;
+	SDL_Texture* pProj;
+	/**
+	* Exits the game 
+	*/
+	void GameQuit();
 private:
 };
 
